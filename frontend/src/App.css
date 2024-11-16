@@ -20,9 +20,9 @@ html, body {
 }
 .App-main {
   grid-column: 2;
-  background: #0c0c0c; /* Dark background for the main content */
-  border-radius: 10px;
-  padding: 15px;
+  background: #1c4963; /* Dark background for the main content */
+  border-radius: 10px  ;
+  padding: 2px;
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
   text-align: center;
   color: #e9e4e4; /* Light text for readability */
