@@ -1,36 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import TrendItem from './TrendItem';
 import './TrendList.css';
 
 const TrendList = () => {
   const [trends, setTrends] = useState([]);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     axios.get('http://127.0.0.1:5000/trends')
-      .then(response => setTrends(response.data))
+      .then(response => {
+        console.log("Data fetched:", response.data); // Log the data
+        setTrends(response.data);
+      })
       .catch(error => {
         console.error("Error fetching data:", error);
-        setTrends([{ title: "Mock Post 1" }, { title: "Mock Post 2" }]);
+        // Fallback mock data
+        setTrends([
+          { idea: "Mock Idea 1", count: 10, url: "https://example.com/1" },
+          { idea: "Mock Idea 2", count: 5, url: "https://example.com/2" }
+        ]);
       });
   }, []);
 
-  const filteredTrends = trends.filter(trend =>
-    trend.title.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="TrendList">
+    <div>
       <h1>Trending Posts</h1>
-      <input
-        type="text"
-        placeholder="Search trends..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
       <ul>
-        {filteredTrends.map((trend, index) => (
-          <li key={index}>{trend.title}</li>
+        {trends.map((trend, index) => (
+          <TrendItem 
+            key={index} 
+            idea={trend.idea} 
+            count={trend.count} 
+          
+          />
         ))}
       </ul>
     </div>

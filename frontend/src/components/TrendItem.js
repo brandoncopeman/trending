@@ -1,7 +1,7 @@
 import React from 'react';
 
-const TrendItem = ({ title }) => {
-  return <li>{title}</li>;
+const TrendItem = ({ idea,count }) => {
+  return <li>{idea}{count}</li>;
 };
 
 export default TrendItem;

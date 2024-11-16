@@ -2,7 +2,30 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 import requests
+import spacy
+from collections import Counter
 
+# Load spaCy's English NLP model
+nlp = spacy.load("en_core_web_sm")
+
+def extract_main_idea(title):
+    """
+    Extract main ideas (proper nouns and key phrases) from a title.
+    """
+    doc = nlp(title)
+    main_ideas = []
+
+    for token in doc:
+        # Proper Nouns (e.g., Mike Tyson, Donald Trump)
+        if token.pos_ == "PROPN":
+            main_ideas.append(token.text)
+        # Combine nouns and adjectives for key ideas (e.g., American Economy)
+        elif token.pos_ == "NOUN" or token.pos_ == "ADJ":
+            phrase = " ".join([w.text for w in token.subtree if w.pos_ in {"NOUN", "ADJ"}])
+            if phrase not in main_ideas:
+                main_ideas.append(phrase)
+
+    return main_ideas
 
 def fetch_reddit_trends():
     url = "https://www.reddit.com/r/popular.json"
@@ -13,16 +36,20 @@ def fetch_reddit_trends():
         response.raise_for_status()  # Ensure the request was successful
         data = response.json()
         
-        # Extract only titles from posts
-        trends = [{"title": post['data']['title']} for post in data['data']['children'] if 'title' in post['data']]
-        # Clear the collection
-        trends_collection.delete_many({})  
-        #return trends
+        # Extract and process main ideas from titles
+        main_idea_counter = Counter()
+        for post in data['data']['children']:
+            title = post['data'].get('title', "")
+            main_ideas = extract_main_idea(title)
+            main_idea_counter.update(main_ideas)
+
+        # Store ranked main ideas in MongoDB
+        trends_collection.delete_many({})  # Clear the collection
+        trends = [{"idea": idea, "count": count} for idea, count in main_idea_counter.most_common()]
         trends_collection.insert_many(trends)
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from Reddit: {e}")
-        return []
     
 
 

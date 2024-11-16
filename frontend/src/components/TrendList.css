@@ -1,36 +1,56 @@
 .TrendList {
   text-align: center; /* Center the text */
-  max-width: 600px; /* Limit the width of the content */
-  background-color: #1f1e1e; /* Add a white background for contrast */
-  padding: 20px;
+  max-width: 600px; /* Restrict content width */
+  margin: 20px auto; /* Center the container on the page */
+  background-color: #141414; /* Dark background */
+  color: #f0f0f0; /* Light text for readability */
+  padding: 10px;
   border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
 }
 
 h1 {
   font-size: 2em;
   margin-bottom: 20px;
+  color: #e9ebf1; /* Accent color for the heading */
 }
 
 ul {
-  list-style: none;
-  padding: 0;
+  list-style: none; /* Remove bullets */
+  padding: 10px;
   margin: 0;
 }
 
 li {
   padding: 10px;
-  border-bottom: 1px solid #1c4963;
+  background: #1e3c41; /* Slightly lighter dark background for list items */
+  border-radius: 5px; /* Rounded corners for each item */
+  margin-bottom: 10px; /* Space between items */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+  transition: transform 0.2s; /* Smooth hover effect */
 }
 
 li:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
+}
+
+li:hover {
+  transform: scale(1.02); /* Slightly enlarge on hover */
+  background: #2c3e50; /* Slightly different background on hover */
 }
 
 input {
   margin-bottom: 20px;
   padding: 10px;
   width: calc(100% - 20px);
-  border: 1px solid #ccc;
+  border: 1px solid #7289da; /* Match accent color */
   border-radius: 5px;
+  background: #606163; /* Match dark theme */
+  color: #f0f0f0; /* Light text */
+}
+
+input:focus {
+  outline: none;
+  border-color: #00b0f4; /* Brighter accent color on focus */
+  box-shadow: 0 0 5px #00b0f4; /* Glow effect on focus */
 }
