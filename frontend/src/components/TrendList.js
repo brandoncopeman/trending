@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import TrendItem from './TrendItem';
+
 
 const TrendList = () => {
   const [trends, setTrends] = useState([]);
@@ -22,7 +24,7 @@ const TrendList = () => {
       <h1>Trending Posts</h1>
       <ul>
         {trends.map((trend, index) => (
-          <li key={index}>{trend.title}</li>
+          <TrendItem key={index} title={trend.title} />
         ))}
       </ul>
     </div>
