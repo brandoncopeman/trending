@@ -1,0 +1,36 @@
+.TrendList {
+  text-align: center; /* Center the text */
+  max-width: 600px; /* Limit the width of the content */
+  background-color: #1f1e1e; /* Add a white background for contrast */
+  padding: 20px;
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 10px;
+  border-bottom: 1px solid #1c4963;
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+input {
+  margin-bottom: 20px;
+  padding: 10px;
+  width: calc(100% - 20px);
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}

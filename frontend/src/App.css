@@ -1,38 +1,107 @@
-.App {
-  text-align: center;
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.25rem; /* Adjust size as needed */
+  background: #131212; /* Subtle dark gradient */
+  color: #f0f0f0; /* Light text for contrast */
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+.App-container {
+  display: grid;
+  grid-template-columns: 1fr minmax(300px, 800px) 1fr; /* Three columns: left, center, right */
+  grid-gap: 20px;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  justify-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  background: url("https://transparenttextures.com/patterns/60-lines.png");
+}
+.App-main {
+  grid-column: 2;
+  background: #0c0c0c; /* Dark background for the main content */
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+  text-align: center;
+  color: #e9e4e4; /* Light text for readability */
+  transition: transform 0.3s, box-shadow 0.3s; /* Modern hover effect */
+}
+
+.App-main:hover {
+  transform: translateY(-5px); /* Slight lift on hover */
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.7); /* Enhanced shadow on hover */
+}
+
+.App-sidebar {
+  grid-column: 1;
+  background: rgba(30, 33, 36, 0.9); /* Dark semi-transparent sidebar */
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  display: none; /* Initially hidden for desktop */
+}
+
+.App-sidebar-right {
+  grid-column: 3;
+  background: rgba(30, 33, 36, 0.9); /* Dark semi-transparent sidebar */
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  display: none; /* Initially hidden for desktop */
+}
+
+@media (max-width: 768px) {
+  .App-container {
+    grid-template-columns: 1fr;
+  }
+
+  .App-sidebar,
+  .App-sidebar-right {
+    display: none;
+  }
+}
+
+.App-sidebar-mobile {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #1e2124; /* Matches the main content */
+  color: #f0f0f0;
+  width: 250px;
+  height: 100%;
+  padding: 20px;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.App-sidebar-mobile.active {
+  transform: translateX(0);
+}
+
+.App-toggle-button {
+  display: block;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #7289da; /* Discord-like accent color */
   color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background 0.3s;
 }
 
-.App-link {
-  color: #61dafb;
+.App-toggle-button:hover {
+  background: #5b6eaa; /* Slightly darker on hover */
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+button {
+  transition: transform 0.2s;
+}
+button:hover {
+  transform: scale(1.05);
 }
