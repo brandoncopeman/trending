@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-import pymongo
+from pymongo import MongoClient
 import requests
 
 
@@ -23,18 +23,20 @@ def fetch_reddit_trends():
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from Reddit: {e}")
         return []
+    
 
 
 app = Flask(__name__)
 CORS(app)
 
 # MongoDB connection
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb://localhost:27017/")
 db = client['trending_db']
 trends_collection = db['trends']
 
 @app.route('/trends', methods=['GET'])
 def get_trends():
+        # Retrieve all trends from MongoDB
     trends = list(trends_collection.find({}, {"_id": 0}))
     return jsonify(trends)
 
