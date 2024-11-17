@@ -10,22 +10,31 @@ nlp = spacy.load("en_core_web_sm")
 
 def extract_main_idea(title):
     """
-    Extract main ideas (proper nouns and key phrases) from a title.
+    Extract the main idea (single phrase) from a title using spaCy.
     """
     doc = nlp(title)
-    main_ideas = []
 
+    # Collect proper noun phrases first (e.g., "Jake Paul")
+    proper_noun_phrases = []
+    for ent in doc.ents:
+        if ent.label_ in {"PERSON", "ORG", "GPE"}:  # Focus on people, organizations, places
+            proper_noun_phrases.append(ent.text)
+
+    if proper_noun_phrases:
+        return proper_noun_phrases[0]  # Use the first proper noun phrase
+
+    # Use significant noun chunks, excluding small/unimportant phrases
+    noun_chunks = [chunk.text for chunk in doc.noun_chunks if len(chunk.text.split()) > 1]
+    if noun_chunks:
+        return noun_chunks[0]
+
+    # Fallback: Return the first noun or the title itself
     for token in doc:
-        # Proper Nouns (e.g., Mike Tyson, Donald Trump)
-        if token.pos_ == "PROPN":
-            main_ideas.append(token.text)
-        # Combine nouns and adjectives for key ideas (e.g., American Economy)
-        elif token.pos_ == "NOUN" or token.pos_ == "ADJ":
-            phrase = " ".join([w.text for w in token.subtree if w.pos_ in {"NOUN", "ADJ"}])
-            if phrase not in main_ideas:
-                main_ideas.append(phrase)
+        if token.pos_ == "NOUN":
+            return token.text
 
-    return main_ideas
+    return title
+
 
 def fetch_reddit_trends():
     url = "https://www.reddit.com/r/popular.json"
@@ -33,24 +42,39 @@ def fetch_reddit_trends():
     
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Ensure the request was successful
+        response.raise_for_status()
         data = response.json()
         
-        # Extract and process main ideas from titles
-        main_idea_counter = Counter()
+        # Count occurrences and group titles for each main idea
+        trends_data = {}
         for post in data['data']['children']:
             title = post['data'].get('title', "")
-            main_ideas = extract_main_idea(title)
-            main_idea_counter.update(main_ideas)
+            main_idea = extract_main_idea(title)
+            permalink = post['data'].get('permalink', "")
+            full_url = f"https://www.reddit.com{permalink}" if permalink else ""
 
-        # Store ranked main ideas in MongoDB
-        trends_collection.delete_many({})  # Clear the collection
-        trends = [{"idea": idea, "count": count} for idea, count in main_idea_counter.most_common()]
-        trends_collection.insert_many(trends)
+            # Initialize the main idea in trends_data if it doesn't exist
+            if main_idea not in trends_data:
+                trends_data[main_idea] = {"count": 0, "titles": []}
+            
+            # Increment the count and append the title with its URL
+            trends_data[main_idea]["count"] += 1
+            trends_data[main_idea]["titles"].append({"title": title, "url": full_url})
+
+        # Prepare ranked trends with associated titles
+        ranked_trends = [
+            {"idea": idea, "count": data["count"], "titles": data["titles"]}
+            for idea, data in trends_data.items()
+        ]
+
+        # Clear the collection and insert ranked trends
+        trends_collection.delete_many({})
+        trends_collection.insert_many(ranked_trends)
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from Reddit: {e}")
-    
+
+
 
 
 app = Flask(__name__)

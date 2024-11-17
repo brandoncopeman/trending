@@ -1,56 +1,78 @@
+/* Main container for the TrendList */
 .TrendList {
-  text-align: center; /* Center the text */
-  max-width: 600px; /* Restrict content width */
-  margin: 20px auto; /* Center the container on the page */
-  background-color: #141414; /* Dark background */
-  color: #f0f0f0; /* Light text for readability */
-  padding: 10px;
-  border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+  text-align: center;
+  width: 600px; /* Fixed width */
+  margin: 20px auto;
+  background-color: #2c2f33;
+  color: #f0f0f0;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  overflow: hidden; /* Prevent content from spilling outside */
 }
 
-h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
-  color: #e9ebf1; /* Accent color for the heading */
-}
-
+/* Unordered list for trends */
 ul {
-  list-style: none; /* Remove bullets */
-  padding: 10px;
+  list-style: none;
+  padding: 0;
   margin: 0;
 }
 
+/* Individual trend list item */
 li {
+  display: flex;
+  flex-direction: column; /* Stack content vertically */
   padding: 10px;
-  background: #1e3c41; /* Slightly lighter dark background for list items */
-  border-radius: 5px; /* Rounded corners for each item */
-  margin-bottom: 10px; /* Space between items */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
-  transition: transform 0.2s; /* Smooth hover effect */
-}
-
-li:last-child {
-  margin-bottom: 0;
-}
-
-li:hover {
-  transform: scale(1.02); /* Slightly enlarge on hover */
-  background: #2c3e50; /* Slightly different background on hover */
-}
-
-input {
-  margin-bottom: 20px;
-  padding: 10px;
-  width: calc(100% - 20px);
-  border: 1px solid #7289da; /* Match accent color */
+  margin-bottom: 10px;
+  background: #23272a;
   border-radius: 5px;
-  background: #606163; /* Match dark theme */
-  color: #f0f0f0; /* Light text */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden; /* Prevent overflow of content */
+  transition: transform 0.2s, background 0.2s; /* Smooth hover effects */
 }
 
-input:focus {
-  outline: none;
-  border-color: #00b0f4; /* Brighter accent color on focus */
-  box-shadow: 0 0 5px #00b0f4; /* Glow effect on focus */
+/* Hover effect for list items */
+li:hover {
+  transform: scale(1.02);
+  background: #2c3e50;
+}
+
+/* Title text for ideas */
+li .idea-name {
+  cursor: pointer;
+  font-size: 1.2em;
+  color: #e5e5e6;
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide overflowing text */
+  text-overflow: ellipsis; /* Add ellipsis for long text */
+  width: 100%; /* Ensure it fills the parent container */
+  max-width: 100%; /* Prevent it from exceeding the container */
+  box-sizing: border-box; /* Include padding in the width calculation */
+}
+
+/* Expanded titles list under each idea */
+.titles-list {
+  margin-top: 10px;
+  padding-left: 20px;
+  list-style: disc;
+  max-height: 150px; /* Limit the height of the expanded area */
+  overflow-y: auto; /* Enable scrolling for long lists */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Links inside expanded titles list */
+.titles-list li a {
+  display: block; /* Ensure each link is on its own line */
+  max-width: 100%; /* Prevent the link from exceeding the container width */
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide overflowing text */
+  text-overflow: ellipsis; /* Add ellipsis for long URLs */
+  color: #118aa8;
+  text-decoration: none;
+  box-sizing: border-box; /* Include padding in the width calculation */
+}
+
+.titles-list li a:hover {
+  text-decoration: underline;
+  color: #00b0f4;
 }

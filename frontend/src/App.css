@@ -105,3 +105,28 @@ button {
 button:hover {
   transform: scale(1.05);
 }
+input {
+  margin-bottom: 20px;
+  padding: 10px;
+  width: calc(100% - 20px);
+  border: 1px solid #7289da;
+  border-radius: 5px;
+  background: #2c2f33;
+  color: #f0f0f0;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 10px 15px;
+  background: #7289da;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+
