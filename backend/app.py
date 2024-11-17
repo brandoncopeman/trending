@@ -37,7 +37,7 @@ def extract_main_idea(title):
 
 
 def fetch_reddit_trends():
-    url = "https://www.reddit.com/r/popular.json"
+    url = "https://www.reddit.com/r/popular.json?limit=100"
     headers = {"User-Agent": "TrendingApp"}
     
     try:
@@ -88,7 +88,7 @@ trends_collection = db['trends']
 @app.route('/trends', methods=['GET'])
 def get_trends():
         # Retrieve all trends from MongoDB
-    trends = list(trends_collection.find({}, {"_id": 0}))
+    trends = list(trends_collection.find({}, {"_id": 0}).sort("count", -1))
     return jsonify(trends)
 
 if __name__ == "__main__":
