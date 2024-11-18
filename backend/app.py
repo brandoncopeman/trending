@@ -47,10 +47,11 @@ def fetch_reddit_trends():
     """
     Fetch trending posts from multiple subreddits on Reddit.
     """
-    subreddits = ["popular", "worldnews", "technology", "sports", "entertainment"]  # List of subreddits
+    subreddits = ["popular", "worldnews", "technology", "sports", "entertainment"]
     trends = []
 
     headers = {"User-Agent": "TrendingApp"}
+    image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]  # Common image extensions
     
     for subreddit in subreddits:
         url = f"https://www.reddit.com/r/{subreddit}.json?limit=100"
@@ -63,8 +64,17 @@ def fetch_reddit_trends():
             for post in data['data']['children']:
                 title = post['data'].get('title', "")
                 main_idea = extract_main_idea(title)
-                permalink = post['data'].get('permalink', "")
-                full_url = f"https://www.reddit.com{permalink}" if permalink else ""
+
+                # Get external URL or fallback to Reddit permalink
+                external_url = post['data'].get('url', "")
+                permalink = f"https://www.reddit.com{post['data'].get('permalink', '')}"
+                is_self_post = post['data'].get('is_self', False)
+
+                # Check if the URL is an image
+                if any(external_url.endswith(ext) for ext in image_extensions) or is_self_post:
+                    full_url = permalink  # Use Reddit post URL
+                else:
+                    full_url = external_url  # Use external URL
 
                 trends.append({
                     "idea": main_idea,
@@ -81,6 +91,8 @@ def fetch_reddit_trends():
 
     print(f"Total fetched posts from Reddit: {len(trends)}")
     return trends
+
+
 
 
 def fetch_google_news():
@@ -263,9 +275,14 @@ trends_collection = db['trends']
 @app.route('/trends', methods=['GET'])
 def get_trends():
     """
-    Retrieve all trends from MongoDB, sorted by count in descending order.
+    Retrieve all trends from MongoDB, excluding those with a count of 1, sorted by count in descending order.
     """
-    trends = list(trends_collection.find({}, {"_id": 0}).sort("count", -1))
+    trends = list(
+        trends_collection.find(
+            {"count": {"$gt": 1}},  # Filter out ideas with count <= 1
+            {"_id": 0}             # Exclude MongoDB's internal `_id` field
+        ).sort("count", -1)         # Sort by count in descending order
+    )
     return jsonify(trends)
 
 if __name__ == "__main__":
