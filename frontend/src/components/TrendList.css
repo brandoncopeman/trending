@@ -1,13 +1,13 @@
 /* Main container for the TrendList */
 .TrendList {
   text-align: center;
-  width: 600px; /* Fixed width */
+  width: 700px; /* Fixed width */
   margin: 20px auto;
   background-color: #2c2f33;
   color: #f0f0f0;
-  padding: 20px;
+  padding: 10px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 8px rgba(7, 86, 92, 0.5);
   overflow: hidden; /* Prevent content from spilling outside */
 }
 
@@ -55,7 +55,7 @@ li .idea-name {
   margin-top: 10px;
   padding-left: 20px;
   list-style: disc;
-  max-height: 150px; /* Limit the height of the expanded area */
+  max-height: 200px; /* Limit the height of the expanded area */
   overflow-y: auto; /* Enable scrolling for long lists */
   overflow-x: hidden; /* Prevent horizontal scrolling */
 }

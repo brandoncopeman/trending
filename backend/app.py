@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 import requests
+import feedparser
 import spacy
 from collections import Counter
 
@@ -35,8 +36,10 @@ def extract_main_idea(title):
 
     return title
 
-
 def fetch_reddit_trends():
+    """
+    Fetch trending posts from Reddit.
+    """
     url = "https://www.reddit.com/r/popular.json?limit=100"
     headers = {"User-Agent": "TrendingApp"}
     
@@ -44,38 +47,99 @@ def fetch_reddit_trends():
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
-        
-        # Count occurrences and group titles for each main idea
-        trends_data = {}
+
+        trends = []
         for post in data['data']['children']:
             title = post['data'].get('title', "")
             main_idea = extract_main_idea(title)
             permalink = post['data'].get('permalink', "")
             full_url = f"https://www.reddit.com{permalink}" if permalink else ""
 
-            # Initialize the main idea in trends_data if it doesn't exist
-            if main_idea not in trends_data:
-                trends_data[main_idea] = {"count": 0, "titles": []}
-            
-            # Increment the count and append the title with its URL
-            trends_data[main_idea]["count"] += 1
-            trends_data[main_idea]["titles"].append({"title": title, "url": full_url})
+            trends.append({
+                "idea": main_idea,
+                "title": title,
+                "url": full_url,
+                "source": "Reddit"
+            })
 
-        # Prepare ranked trends with associated titles
-        ranked_trends = [
-            {"idea": idea, "count": data["count"], "titles": data["titles"]}
-            for idea, data in trends_data.items()
-        ]
-
-        # Clear the collection and insert ranked trends
-        trends_collection.delete_many({})
-        trends_collection.insert_many(ranked_trends)
+        return trends
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from Reddit: {e}")
+        return []
+
+def fetch_google_news():
+    """
+    Fetch news articles from multiple Google News RSS feeds.
+    """
+    # Define RSS feeds with categories
+    feeds = {
+        "Top Stories": "https://news.google.com/rss",
+        "World": "https://news.google.com/rss/headlines/section/topic/WORLD",
+        "Technology": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY",
+        "Entertainment": "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT",
+        "Sports": "https://news.google.com/rss/headlines/section/topic/SPORTS"
+    }
+
+    trends = []
+
+    # Fetch and parse each feed
+    for category, url in feeds.items():
+        feed = feedparser.parse(url)
+        print(f"Fetched {len(feed.entries)} posts from {category} category.")  # Log the count
+
+        for entry in feed.entries:
+            trends.append({
+                "idea": extract_main_idea(entry.title),
+                "title": entry.title,
+                "url": entry.link,
+                "source": f"Google News - {category}"
+            })
+
+    return trends
 
 
 
+def fetch_combined_trends():
+    """
+    Combine trends from Reddit and Google News, aggregate counts, and save to MongoDB.
+    """
+    # Fetch data from both sources
+    reddit_trends = fetch_reddit_trends()
+    google_news_trends = fetch_google_news()
+
+    # Centralized dictionary for aggregation
+    aggregated_data = {}
+
+    def aggregate_trends(trends):
+        for trend in trends:
+            idea = trend["idea"]
+            if idea not in aggregated_data:
+                aggregated_data[idea] = {"count": 0, "titles": []}
+
+            # Increment the count and add the title + URL
+            aggregated_data[idea]["count"] += 1
+            aggregated_data[idea]["titles"].append({
+                "title": trend["title"],
+                "url": trend["url"],
+                "source": trend["source"]
+            })
+
+    # Aggregate trends from both sources
+    aggregate_trends(reddit_trends)
+    aggregate_trends(google_news_trends)
+
+    # Convert aggregated data to a list for MongoDB
+    combined_trends = [
+        {"idea": idea, "count": data["count"], "titles": data["titles"]}
+        for idea, data in aggregated_data.items()
+    ]
+
+    # Clear MongoDB collection and insert combined trends
+    trends_collection.delete_many({})
+    trends_collection.insert_many(combined_trends)
+
+    return combined_trends
 
 app = Flask(__name__)
 CORS(app)
@@ -87,10 +151,12 @@ trends_collection = db['trends']
 
 @app.route('/trends', methods=['GET'])
 def get_trends():
-        # Retrieve all trends from MongoDB
+    """
+    Retrieve all trends from MongoDB, sorted by count in descending order.
+    """
     trends = list(trends_collection.find({}, {"_id": 0}).sort("count", -1))
     return jsonify(trends)
 
 if __name__ == "__main__":
-    trends = fetch_reddit_trends()
+    fetch_combined_trends()  # Fetch and combine trends at startup
     app.run(debug=True)
