@@ -55,7 +55,7 @@ li .idea-name {
   margin-top: 10px;
   padding-left: 20px;
   list-style: disc;
-  max-height: 200px; /* Limit the height of the expanded area */
+  max-height: 1800px; /* Limit the height of the expanded area */
   overflow-y: auto; /* Enable scrolling for long lists */
   overflow-x: hidden; /* Prevent horizontal scrolling */
 }

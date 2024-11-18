@@ -5,6 +5,13 @@ import requests
 import feedparser
 import spacy
 from collections import Counter
+import tweepy
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
+TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # Load spaCy's English NLP model
 nlp = spacy.load("en_core_web_sm")
@@ -38,35 +45,43 @@ def extract_main_idea(title):
 
 def fetch_reddit_trends():
     """
-    Fetch trending posts from Reddit.
+    Fetch trending posts from multiple subreddits on Reddit.
     """
-    url = "https://www.reddit.com/r/popular.json?limit=100"
+    subreddits = ["popular", "worldnews", "technology", "sports", "entertainment"]  # List of subreddits
+    trends = []
+
     headers = {"User-Agent": "TrendingApp"}
     
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+    for subreddit in subreddits:
+        url = f"https://www.reddit.com/r/{subreddit}.json?limit=100"
 
-        trends = []
-        for post in data['data']['children']:
-            title = post['data'].get('title', "")
-            main_idea = extract_main_idea(title)
-            permalink = post['data'].get('permalink', "")
-            full_url = f"https://www.reddit.com{permalink}" if permalink else ""
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
 
-            trends.append({
-                "idea": main_idea,
-                "title": title,
-                "url": full_url,
-                "source": "Reddit"
-            })
+            for post in data['data']['children']:
+                title = post['data'].get('title', "")
+                main_idea = extract_main_idea(title)
+                permalink = post['data'].get('permalink', "")
+                full_url = f"https://www.reddit.com{permalink}" if permalink else ""
 
-        return trends
+                trends.append({
+                    "idea": main_idea,
+                    "title": title,
+                    "url": full_url,
+                    "source": f"Reddit - r/{subreddit}"
+                })
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from Reddit: {e}")
-        return []
+            print(f"Fetched {len(data['data']['children'])} posts from r/{subreddit}.")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching data from r/{subreddit}: {e}")
+            continue
+
+    print(f"Total fetched posts from Reddit: {len(trends)}")
+    return trends
+
 
 def fetch_google_news():
     """
@@ -98,17 +113,106 @@ def fetch_google_news():
 
     return trends
 
+def fetch_twitter_trends():
+    """
+    Fetch trending tweets using Twitter v2 API Recent Search, limiting to 20 requests.
+    """
+    # Twitter API Bearer Token
+    BEARER_TOKEN = TWITTER_BEARER_TOKEN
+
+    # Initialize Tweepy Client
+    client = tweepy.Client(bearer_token=BEARER_TOKEN)
+
+    # Keywords for fetching popular tweets
+    topics = ["world news"]
+    trends = []
+    max_requests = 20  # Limit total requests
+    request_count = 0  # Track requests made
+
+    for topic in topics:
+        if request_count >= max_requests:  # Stop if max requests reached
+            break
+
+        try:
+            # Fetch recent tweets for the topic
+            response = client.search_recent_tweets(
+                query=topic,
+                max_results=20,  # Limit to 20 tweets per request
+                tweet_fields=["created_at", "text", "public_metrics"]
+            )
+            request_count += 1  # Increment request count
+
+            if response.data:
+                for tweet in response.data:
+                    trends.append({
+                        "idea": extract_main_idea(tweet.text),  # Extract main idea from tweet
+                        "title": tweet.text,
+                        "url": f"https://twitter.com/i/web/status/{tweet.id}",
+                        "source": "Twitter"
+                    })
+
+        except tweepy.errors.TweepyException as e:
+            print(f"Error fetching tweets for topic '{topic}': {e}")
+            continue
+
+    print(f"Fetched {len(trends)} trends from Twitter after {request_count} requests.")
+    return trends
+
+
+def fetch_newsapi_trends():
+    """
+    Fetch news articles from multiple categories using NewsAPI.
+    """
+    url = "https://newsapi.org/v2/top-headlines"
+    categories = ["general","science", "business", "technology", "entertainment", "sports", "health"]
+    trends = []
+
+    for category in categories:
+        params = {
+            "language": "en",        # Fetch English articles
+            "category": category,    # Use category parameter for filtering
+            "pageSize": 35,          # Limit to 35 articles per category
+            "apiKey": NEWSAPI_KEY    # Your NewsAPI key from .env
+        }
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            data = response.json()
+
+            for article in data.get("articles", []):
+                trends.append({
+                    "idea": extract_main_idea(article["title"]),
+                    "title": article["title"],
+                    "url": article["url"],
+                    "source": f"NewsAPI - {category.capitalize()}"
+                })
+
+            print(f"Fetched {len(data.get('articles', []))} articles from NewsAPI ({category}).")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching data from NewsAPI ({category}): {e}")
+            continue
+
+    print(f"Total fetched articles from NewsAPI: {len(trends)}")
+    return trends
+
 
 
 def fetch_combined_trends():
     """
-    Combine trends from Reddit and Google News, aggregate counts, and save to MongoDB.
+    Combine trends from Reddit, Google News, Twitter, and NewsAPI, aggregate counts, and save to MongoDB.
     """
-    # Fetch data from both sources
     reddit_trends = fetch_reddit_trends()
     google_news_trends = fetch_google_news()
+    twitter_trends = fetch_twitter_trends()
+    newsapi_trends = fetch_newsapi_trends()
 
-    # Centralized dictionary for aggregation
+    print(f"Fetched {len(reddit_trends)} total posts from Reddit")
+    print(f"Fetched {len(google_news_trends)} total posts from Google News")
+    print(f"Fetched {len(twitter_trends)} trends from Twitter")
+    print(f"Fetched {len(newsapi_trends)} articles from NewsAPI")
+
     aggregated_data = {}
 
     def aggregate_trends(trends):
@@ -117,29 +221,36 @@ def fetch_combined_trends():
             if idea not in aggregated_data:
                 aggregated_data[idea] = {"count": 0, "titles": []}
 
-            # Increment the count and add the title + URL
-            aggregated_data[idea]["count"] += 1
-            aggregated_data[idea]["titles"].append({
-                "title": trend["title"],
-                "url": trend["url"],
-                "source": trend["source"]
-            })
+            is_duplicate = any(
+                t["title"] == trend["title"] and t["url"] == trend["url"]
+                for t in aggregated_data[idea]["titles"]
+            )
+            if not is_duplicate:
+                aggregated_data[idea]["count"] += 1
+                aggregated_data[idea]["titles"].append({
+                    "title": trend["title"],
+                    "url": trend["url"],
+                    "source": trend["source"]
+                })
 
-    # Aggregate trends from both sources
     aggregate_trends(reddit_trends)
     aggregate_trends(google_news_trends)
+    aggregate_trends(twitter_trends)
+    aggregate_trends(newsapi_trends)
 
-    # Convert aggregated data to a list for MongoDB
+    total_posts = len(reddit_trends) + len(google_news_trends) + len(twitter_trends) + len(newsapi_trends)
+    print(f"Fetched {total_posts} combined total posts")
+
     combined_trends = [
         {"idea": idea, "count": data["count"], "titles": data["titles"]}
         for idea, data in aggregated_data.items()
     ]
 
-    # Clear MongoDB collection and insert combined trends
     trends_collection.delete_many({})
     trends_collection.insert_many(combined_trends)
 
     return combined_trends
+
 
 app = Flask(__name__)
 CORS(app)
