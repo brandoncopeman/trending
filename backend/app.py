@@ -8,10 +8,14 @@ from collections import Counter
 import tweepy
 from dotenv import load_dotenv
 import os
+from atproto import Client
 
 load_dotenv()
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
+BS_USERNAME = os.getenv("BLUESKY_USERNAM")
+BS_PASSWORD = os.getenv("BLUESKY_PASSWORD")
+
 
 # Load spaCy's English NLP model
 nlp = spacy.load("en_core_web_sm")
@@ -42,6 +46,56 @@ def extract_main_idea(title):
             return token.text
 
     return title
+
+def fetch_bluesky_trends():
+    """
+    Fetch posts from Bluesky using their API.
+    """
+    BS_USERNAME = os.getenv("BLUESKY_USERNAM")
+    BS_PASSWORD = os.getenv("BLUESKY_PASSWORD")
+    trends = []
+
+    try:
+        # Create a session
+        client = Client()
+        client.login(BS_USERNAME, BS_PASSWORD)
+        print("Bluesky Authentication successful!")
+
+
+         # Initial fetch
+        response = client.get_timeline(limit=20)
+        for item in response.feed:
+            process_post(item, trends)
+
+        # Check for pagination
+        next_cursor = response.get("cursor")
+        while next_cursor:
+            response = client.get_timeline(limit=20, cursor=next_cursor)
+            for item in response.feed:
+                process_post(item, trends)
+            next_cursor = response.get("cursor")
+
+        print(f"Fetched {len(trends)} posts from Bluesky.")
+    except Exception as e:
+        print(f"Error fetching Bluesky data: {e}")
+
+    return trends
+
+def process_post(item, trends):
+    """
+    Helper function to process a single post item.
+    """
+    post = item.post
+    record = post.record
+    title = record.text if hasattr(record, 'text') else ""
+    uri = post.uri
+    permalink = f"https://bsky.app/profile/{post.author.handle}/post/{uri.split('/')[-1]}"
+    trends.append({
+        "idea": extract_main_idea(title),
+        "title": title,
+        "url": permalink,
+        "source": "Bluesky"
+    })
 
 def fetch_reddit_trends():
     """
@@ -213,17 +267,19 @@ def fetch_newsapi_trends():
 
 def fetch_combined_trends():
     """
-    Combine trends from Reddit, Google News, Twitter, and NewsAPI, aggregate counts, and save to MongoDB.
+    Combine trends from all sources, aggregate counts, and save to MongoDB.
     """
     reddit_trends = fetch_reddit_trends()
     google_news_trends = fetch_google_news()
     twitter_trends = fetch_twitter_trends()
     newsapi_trends = fetch_newsapi_trends()
+    bluesky_trends = fetch_bluesky_trends()
 
     print(f"Fetched {len(reddit_trends)} total posts from Reddit")
     print(f"Fetched {len(google_news_trends)} total posts from Google News")
     print(f"Fetched {len(twitter_trends)} trends from Twitter")
     print(f"Fetched {len(newsapi_trends)} articles from NewsAPI")
+    print(f"Fetched {len(bluesky_trends)} posts from Bluesky")
 
     aggregated_data = {}
 
@@ -249,8 +305,11 @@ def fetch_combined_trends():
     aggregate_trends(google_news_trends)
     aggregate_trends(twitter_trends)
     aggregate_trends(newsapi_trends)
+    aggregate_trends(bluesky_trends)
 
-    total_posts = len(reddit_trends) + len(google_news_trends) + len(twitter_trends) + len(newsapi_trends)
+    total_posts = sum(len(trends) for trends in [
+        reddit_trends, google_news_trends, twitter_trends, newsapi_trends, bluesky_trends
+    ])
     print(f"Fetched {total_posts} combined total posts")
 
     combined_trends = [
@@ -262,6 +321,7 @@ def fetch_combined_trends():
     trends_collection.insert_many(combined_trends)
 
     return combined_trends
+
 
 
 app = Flask(__name__)
