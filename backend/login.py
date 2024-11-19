@@ -8,8 +8,7 @@ load_dotenv()
 BS_USERNAM = os.getenv("BLUESKY_USERNAM")
 BS_PASSWORD = os.getenv("BLUESKY_PASSWORD")
 
-username = "bcopeman@yahoo.com"
-password = "Ttebow15!!"
+
 print(f"Username: {BS_USERNAM}")
 print(f"Password: {BS_PASSWORD}")
 try:
